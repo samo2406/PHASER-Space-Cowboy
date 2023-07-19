@@ -24,4 +24,15 @@ export class startScene extends Phaser.Scene
 
         particles.startFollow(logo);
     }
+    
 }
+
+const config = {
+    type: Phaser.AUTO,
+    width: 1024,
+    height: 768,
+
+    scene: startScene
+};
+
+const game = new Phaser.Game(config);
