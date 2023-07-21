@@ -1,4 +1,5 @@
-import { Player } from '../player.js'
+import { Player } from '../GameObjects/player.js'
+import { CameraController } from '../GameObjects/camera.js'
 
 export class levelScene extends Phaser.Scene {
   constructor () {
@@ -24,6 +25,9 @@ export class levelScene extends Phaser.Scene {
 
     // World bounds
     this.physics.world.setBounds(0, 0, this.background.width, this.background.height)
+
+    // Camera controller
+    this.cameraController = new CameraController(this)
 
     // Platforms
     this.buildPlatforms()
@@ -51,7 +55,7 @@ export class levelScene extends Phaser.Scene {
       gravityY: 0,
       on: false
     })
-    this.cameras.main.fadeIn(1000, 0, 0, 0)
+    this.cameras.main.fadeIn(500, 0, 0, 0)
   }
 
   update () {
@@ -72,14 +76,7 @@ export class levelScene extends Phaser.Scene {
       this.player.sit = false
     }
 
-    const playerScrollCenterY = this.player.player.body.y + (this.player.player.body.height / 2) - (this.cameras.main.displayHeight / 2)
-    const distanceFromCamera = Math.abs(this.cameras.main.scrollY - playerScrollCenterY)
-    if (this.cameras.main.scrollY < playerScrollCenterY) {
-      this.cameras.main.scrollY = Math.min(this.cameras.main.scrollY + distanceFromCamera * 0.01, this.background.displayHeight - this.cameras.main.displayHeight / 2)
-    } else if (this.cameras.main.scrollY > playerScrollCenterY) {
-      this.cameras.main.scrollY = Math.max(this.cameras.main.scrollY - distanceFromCamera * 0.01, this.cameras.main.displayHeight / 2)
-    }
-
+    this.cameraController.update()
     this.player.update()
   }
 
@@ -93,8 +90,8 @@ export class levelScene extends Phaser.Scene {
     this.platforms.create(150, 1950, 'platform3')
     this.platforms.create(400, 1750, 'platform1')
     this.platforms.create(800, 1750, 'platform1')
-    this.platforms.create(1000, 1550, 'platform1')
-    this.platforms.create(800, 1350, 'platform1')
-    this.platforms.create(350, 1300, 'platform2')
+    this.platforms.create(1000, 1575, 'platform3')
+    this.platforms.create(800, 1360, 'platform1')
+    this.platforms.create(375, 1315, 'platform2')
   }
 }
