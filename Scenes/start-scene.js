@@ -1,38 +1,53 @@
-export class startScene extends Phaser.Scene
-{
-    constructor ()
-    {
-        super();
-    }
+export class startScene extends Phaser.Scene {
+  pressedStart = false
 
-    preload ()
-    {
-        this.load.setBaseURL('https://labs.phaser.io');
-        this.load.image('sky', 'assets/skies/space3.png');
-        this.load.image('logo', 'assets/sprites/phaser3-logo.png');
-    }
+  constructor () {
+    super({ key: 'Menu' })
+  }
 
-    create ()
-    {
-        this.add.image(512, 384, 'sky');
+  preload () {
+    this.load.image('start_button', './Assets/start_button.png')
+    this.load.image('start_button_mouseover', './Assets/start_button_mouseover.png')
+    this.load.image('space_cowboy', './Assets/game_name.png')
+    this.load.spritesheet('background', './Assets/background.png', { frameWidth: 1024, frameHeight: 768 })
+    this.load.image('phaser_logo', 'https://labs.phaser.io/assets/sprites/phaser3-logo.png')
+  }
 
-        const logo = this.physics.add.image(400, 100, 'logo');
+  create () {
+    this.anims.create({
+      key: 'background',
+      frames: this.anims.generateFrameNumbers('background', {
+        start: 0,
+        end: 58
+      }),
+      frameRate: 10,
+      repeat: -1
+    })
 
-        logo.setVelocity(100, 200);
-        logo.setBounce(1, 1);
-        logo.setCollideWorldBounds(true);
+    this.background = this.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY, 'background')
+    this.background.anims.play('background', true)
 
-        particles.startFollow(logo);
-    }
-    
+    this.add.sprite(this.cameras.main.centerX, 100, 'phaser_logo')
+    this.add.sprite(this.cameras.main.centerX, 400, 'space_cowboy')
+    const button = this.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY + 100, 'start_button').setInteractive()
+
+    button.on('pointerdown', async function () {
+      button.input.enabled = false
+      this.cameras.main.fadeOut(500, 0, 0, 0)
+
+      this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, (cam, effect) => {
+        console.log('switching to level1')
+        this.pressedStart = true
+        this.scene.start('Level1')
+      })
+    }, this)
+
+    button.on('pointerover', function () {
+      button.setTexture('start_button_mouseover')
+    })
+
+    button.on('pointerout', function () {
+      button.setTexture('start_button')
+    })
+  }
 }
-
-const config = {
-    type: Phaser.AUTO,
-    width: 1024,
-    height: 768,
-
-    scene: startScene
-};
-
-const game = new Phaser.Game(config);
