@@ -9,14 +9,14 @@ export class startScene extends Phaser.Scene {
     this.load.image('start_button', './Assets/start_button.png')
     this.load.image('start_button_mouseover', './Assets/start_button_mouseover.png')
     this.load.image('space_cowboy', './Assets/game_name.png')
-    this.load.spritesheet('background', './Assets/background.png', { frameWidth: 1024, frameHeight: 768 })
+    this.load.spritesheet('menu_background', './Assets/background.png', { frameWidth: 1024, frameHeight: 768 })
     this.load.image('phaser_logo', 'https://labs.phaser.io/assets/sprites/phaser3-logo.png')
   }
 
   create () {
     this.anims.create({
-      key: 'background',
-      frames: this.anims.generateFrameNumbers('background', {
+      key: 'menu_background',
+      frames: this.anims.generateFrameNumbers('menu_background', {
         start: 0,
         end: 58
       }),
@@ -24,8 +24,8 @@ export class startScene extends Phaser.Scene {
       repeat: -1
     })
 
-    this.background = this.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY, 'background')
-    this.background.anims.play('background', true)
+    this.background = this.add.sprite(this.cameras.main.centerX, this.cameras.main.centerY, 'menu_background')
+    this.background.anims.play('menu_background', true)
 
     this.add.sprite(this.cameras.main.centerX, 100, 'phaser_logo')
     this.add.sprite(this.cameras.main.centerX, 400, 'space_cowboy')

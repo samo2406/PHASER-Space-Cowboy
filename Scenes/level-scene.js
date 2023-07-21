@@ -6,7 +6,8 @@ export class levelScene extends Phaser.Scene {
   }
 
   preload () {
-    this.load.image('background', './Assets/background.png')
+    this.load.image('background', './Assets/level1_bg.png')
+    this.load.image('platform0', './Assets/platform_0.png')
     this.load.image('platform1', './Assets/platform_1.png')
     this.load.image('platform2', './Assets/platform_2.png')
     this.load.image('platform3', './Assets/platform_3.png')
@@ -19,21 +20,16 @@ export class levelScene extends Phaser.Scene {
 
   create () {
     // Background
-    this.add.image(512, 384, 'background')
+    this.background = this.add.image(0, 0, 'background').setOrigin(0, 0)
+
+    // World bounds
+    this.physics.world.setBounds(0, 0, this.background.width, this.background.height)
+
     // Platforms
-    this.platforms = this.physics.add.staticGroup()
-
-    this.platforms.create(150, 780, 'platform6')
-    this.platforms.create(450, 780, 'platform6')
-    this.platforms.create(750, 780, 'platform6').setFlipX(true)
-    this.platforms.create(1050, 780, 'platform6')
-
-    this.platforms.create(700, 550, 'platform2')
-    this.platforms.create(50, 250, 'platform2')
-    this.platforms.create(750, 220, 'platform3')
+    this.buildPlatforms()
 
     // Player
-    this.player = new Player(this, 400, 500, 'player', this.platforms)
+    this.player = new Player(this, 400, 2100, 'player', this.platforms)
 
     // Player controlls
     this.cursors = this.input.keyboard.createCursorKeys()
@@ -76,6 +72,29 @@ export class levelScene extends Phaser.Scene {
       this.player.sit = false
     }
 
+    const playerScrollCenterY = this.player.player.body.y + (this.player.player.body.height / 2) - (this.cameras.main.displayHeight / 2)
+    const distanceFromCamera = Math.abs(this.cameras.main.scrollY - playerScrollCenterY)
+    if (this.cameras.main.scrollY < playerScrollCenterY) {
+      this.cameras.main.scrollY = Math.min(this.cameras.main.scrollY + distanceFromCamera * 0.01, this.background.displayHeight - this.cameras.main.displayHeight / 2)
+    } else if (this.cameras.main.scrollY > playerScrollCenterY) {
+      this.cameras.main.scrollY = Math.max(this.cameras.main.scrollY - distanceFromCamera * 0.01, this.cameras.main.displayHeight / 2)
+    }
+
     this.player.update()
+  }
+
+  buildPlatforms () {
+    this.platforms = this.physics.add.staticGroup()
+
+    this.platforms.create(this.background.displayWidth / 2, this.background.displayHeight, 'platform0')
+
+    this.platforms.create(420, 2100, 'platform2')
+    this.platforms.create(700, 2200, 'platform1')
+    this.platforms.create(150, 1950, 'platform3')
+    this.platforms.create(400, 1750, 'platform1')
+    this.platforms.create(800, 1750, 'platform1')
+    this.platforms.create(1000, 1550, 'platform1')
+    this.platforms.create(800, 1350, 'platform1')
+    this.platforms.create(350, 1300, 'platform2')
   }
 }

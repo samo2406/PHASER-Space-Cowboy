@@ -1,5 +1,7 @@
 export class Player {
   constructor (scene, x, y, texture, platforms) {
+    this.maxSpeedGround = 450
+    this.maxSpeedAir = 600
     this.jumpPower = 2500
     this.jumpTick = 0
     this.scene = scene
@@ -41,9 +43,9 @@ export class Player {
       this.player.setVelocityX(-20)
     }
     if (this.player.body.touching.down) {
-      this.player.setVelocityX(Math.max(this.player.body.velocity.x - 5, -400))
+      this.player.setVelocityX(Math.max(this.player.body.velocity.x - 5, -this.maxSpeedGround))
     } else {
-      this.player.setVelocityX(Math.max(this.player.body.velocity.x - 5, -500))
+      this.player.setVelocityX(Math.max(this.player.body.velocity.x - 5, -this.maxSpeedAir))
     }
   }
 
@@ -52,9 +54,9 @@ export class Player {
       this.player.setVelocityX(20)
     }
     if (this.player.body.touching.down) {
-      this.player.setVelocityX(Math.min(this.player.body.velocity.x + 5, 400))
+      this.player.setVelocityX(Math.min(this.player.body.velocity.x + 5, this.maxSpeedGround))
     } else {
-      this.player.setVelocityX(Math.min(this.player.body.velocity.x + 5, 500))
+      this.player.setVelocityX(Math.min(this.player.body.velocity.x + 5, this.maxSpeedAir))
     }
   }
 
