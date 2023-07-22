@@ -1,4 +1,3 @@
-import { startScene } from './Scenes/start-scene.js'
 import { levelScene } from './Scenes/level-scene.js'
 
 const config = {
@@ -12,7 +11,7 @@ const config = {
       debug: false
     }
   },
-  scene: [startScene, levelScene]
+  scene: [levelScene]
 }
 
 // eslint-disable-next-line no-unused-vars

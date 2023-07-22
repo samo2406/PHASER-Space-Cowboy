@@ -1,15 +1,21 @@
 export class Player {
-  constructor (scene, x, y, texture, platforms) {
+  constructor (scene, x, y, texture) {
     this.maxSpeedGround = 450
     this.maxSpeedAir = 600
     this.jumpPower = 2500
     this.jumpTick = 0
     this.scene = scene
     this.sit = false
+    this.canJump = false
+    this.canMove = false
     this.player = scene.physics.add.sprite(x, y, texture)
     this.player.setSize(60, 78)
-    scene.physics.add.collider(this.player, platforms)
+    this.player.setFlipX(true)
+
     this.player.setCollideWorldBounds(true)
+    this.platformCollider = ''
+    this.enemyColliders = []
+    this.addColliders()
 
     // Animations
     this.scene.anims.create({
@@ -38,41 +44,93 @@ export class Player {
     })
   }
 
+  addColliders () {
+    this.platformCollider = this.scene.physics.add.collider(this.player, this.scene.platforms, this.hitPlatform, null, this)
+    this.scene.enemies.forEach(enemy => this.enemyColliders.push(this.scene.physics.add.overlap(this.player, enemy.enemy, this.hitEnemy, null, this)))
+  }
+
+  removeColliders () {
+    this.platformCollider.destroy()
+    this.enemyColliders.forEach(enemyCol => enemyCol.destroy())
+  }
+
   moveLeft () {
-    if (this.player.body.velocity.x > -20) {
-      this.player.setVelocityX(-20)
-    }
-    if (this.player.body.touching.down) {
-      this.player.setVelocityX(Math.max(this.player.body.velocity.x - 5, -this.maxSpeedGround))
-    } else {
-      this.player.setVelocityX(Math.max(this.player.body.velocity.x - 5, -this.maxSpeedAir))
+    if (this.canMove) {
+      if (this.player.body.velocity.x > -20) {
+        this.player.setVelocityX(-20)
+      }
+      if (this.player.body.touching.down) {
+        this.player.setVelocityX(Math.max(this.player.body.velocity.x - 5, -this.maxSpeedGround))
+      } else {
+        this.player.setVelocityX(Math.max(this.player.body.velocity.x - 5, -this.maxSpeedAir))
+      }
     }
   }
 
   moveRight () {
-    if (this.player.body.velocity.x < 20) {
-      this.player.setVelocityX(20)
-    }
-    if (this.player.body.touching.down) {
-      this.player.setVelocityX(Math.min(this.player.body.velocity.x + 5, this.maxSpeedGround))
-    } else {
-      this.player.setVelocityX(Math.min(this.player.body.velocity.x + 5, this.maxSpeedAir))
+    if (this.canMove) {
+      if (this.player.body.velocity.x < 20) {
+        this.player.setVelocityX(20)
+      }
+      if (this.player.body.touching.down) {
+        this.player.setVelocityX(Math.min(this.player.body.velocity.x + 5, this.maxSpeedGround))
+      } else {
+        this.player.setVelocityX(Math.min(this.player.body.velocity.x + 5, this.maxSpeedAir))
+      }
     }
   }
 
   stand () {
-    while (Math.abs(this.player.body.velocity.x) > 0.1) {
-      this.player.setVelocityX(this.player.body.velocity.x * 0.99)
+    if (this.canMove) {
+      while (Math.abs(this.player.body.velocity.x) > 0.1) {
+        this.player.setVelocityX(this.player.body.velocity.x * 0.99)
+      }
+      this.player.setVelocityX(0)
     }
-    this.player.setVelocityX(0)
   }
 
-  jump () {
-    this.player.setVelocityY(-(this.jumpPower))
-    this.jumping = true
+  jump (emitter) {
+    if (this.canJump && this.canMove) {
+      this.canJump = false
+      emitter.emitParticleAt(this.player.body.x + this.player.displayWidth / 2, this.player.body.y + this.player.displayHeight, 4)
+      this.player.setVelocityY(-(this.jumpPower))
+      this.jumping = true
+    }
+  }
+
+  hitEnemy () {
+    if (this.canMove) {
+      const playerVelocity = this.player.body.velocity.clone()
+      if (playerVelocity.y > 0) {
+        playerVelocity.y = -1000
+      } else {
+        playerVelocity.y = -500
+      }
+      if (playerVelocity.x > 0) {
+        playerVelocity.x = -500
+      } else {
+        playerVelocity.x = 500
+      }
+      this.canMove = false
+      this.player.body.setVelocity(playerVelocity.x, playerVelocity.y)
+      this.scene.time.addEvent({ delay: 250, callback: () => { this.canMove = true }, callbackScope: this })
+      this.player.setTint(0xff0000)
+      this.scene.time.addEvent({ delay: 250, callback: () => { this.player.setTint(0xffffff) }, callbackScope: this })
+    }
+  }
+
+  hitPlatform () {
+    if (this.player.body.touching.down) {
+      this.canJump = true
+    }
   }
 
   update () {
+    if (this.player.body.y > 2500) {
+      this.addColliders()
+      this.canMove = true
+    }
+
     if (this.jumping) {
       this.jumpTick++
       if (this.jumpTick >= 12) {
