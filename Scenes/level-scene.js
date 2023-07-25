@@ -1,10 +1,12 @@
-import { Player } from '../GameObjects/player.js'
-import { Enemy } from '../GameObjects/enemy.js'
+import Player from '../GameObjects/player.js'
+import Enemy from '../GameObjects/enemy.js'
+import Platform from '../GameObjects/platform.js'
 import { CameraController } from '../GameObjects/camera.js'
 
 export class levelScene extends Phaser.Scene {
   constructor () {
     super({ key: 'Level1' })
+    this.timer = 0
   }
 
   preload () {
@@ -22,18 +24,32 @@ export class levelScene extends Phaser.Scene {
     this.load.image('platform4', './Assets/platform_4.png')
     this.load.image('platform5', './Assets/platform_5.png')
     this.load.image('platform6', './Assets/platform_6.png')
-    this.load.spritesheet('player', './Assets/player.png', { frameWidth: 60, frameHeight: 84, spacing: 6 })
+
     this.load.image('star_particle', './Assets/star_particle.png')
     this.load.image('jump_particle', './Assets/jump_particle.png')
+
+    this.load.spritesheet('player', './Assets/player.png', { frameWidth: 60, frameHeight: 84, spacing: 6 })
     this.load.spritesheet('red_enemy', './Assets/red_enemy.png', { frameWidth: 123, frameHeight: 98, spacing: 4 })
     this.load.spritesheet('green_enemy', './Assets/green_enemy.png', { frameWidth: 126, frameHeight: 81, spacing: 7 })
     this.load.spritesheet('blue_enemy', './Assets/blue_enemy.png', { frameWidth: 129, frameHeight: 98, spacing: 1 })
     this.load.spritesheet('orange_enemy', './Assets/orange_enemy.png', { frameWidth: 115, frameHeight: 81, spacing: 2 })
+
+    this.load.audio('jump', './Assets/jump.wav')
+    this.load.audio('hit', './Assets/hit.wav')
+    this.load.audio('finish', './Assets/finish.wav')
   }
 
   create () {
+    // UI Scene
+    this.UI = this.scene.get('UIScene')
+
     // Background
     this.background = this.add.image(0, 0, 'background').setOrigin(0, 0)
+
+    // Sounds
+    this.jumpSound = this.sound.add('jump', { loop: false, volume: 0.1 })
+    this.hitSound = this.sound.add('hit', { loop: false, volume: 0.1 })
+    this.finishSound = this.sound.add('finish', { loop: false, volume: 0.1 })
 
     // Camera controller
     this.cameras.main.scrollY = -700
@@ -73,10 +89,6 @@ export class levelScene extends Phaser.Scene {
     // World bounds
     this.physics.world.setBounds(0, -500, this.background.width, this.background.height + 1000)
 
-    // Menu logos
-    this.add.sprite(this.cameras.main.centerX, -600, 'phaser_logo')
-    this.add.sprite(this.cameras.main.centerX, -270, 'space_cowboy')
-
     // Platforms
     this.buildPlatforms()
 
@@ -84,7 +96,7 @@ export class levelScene extends Phaser.Scene {
     this.spawnEnemies()
 
     // Player
-    this.player = new Player(this, 900, -250, 'player', this.platforms)
+    this.player = new Player(this, 900, -250, 'player')
 
     // Player controlls
     this.cursors = this.input.keyboard.createCursorKeys()
@@ -94,20 +106,49 @@ export class levelScene extends Phaser.Scene {
     this.keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S)
     this.keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D)
 
+    // Jump particle emitter
+    this.jumpParticles = this.add.particles('jump_particle')
+    this.jumpEmitter = this.jumpParticles.createEmitter({
+      lifespan: 250,
+      angle: { min: 15, max: 165 },
+      speed: { min: 100, max: 125 },
+      count: { min: 3, max: 4 },
+      scale: { start: 1.5, end: 0 },
+      rotate: { start: 0, end: 20 },
+      alpha: { start: 1, end: 0 },
+      gravityY: 200,
+      on: false
+    })
+
+    // Fireworks particle emitter
+    this.jumpParticles = this.add.particles('jump_particle')
+    this.fireworkEmitter = this.jumpParticles.createEmitter({
+      lifespan: 3000,
+      angle: { min: 240, max: 300 },
+      speed: { min: 500, max: 700 },
+      count: { min: 50, max: 60 },
+      scale: { start: 1, end: 1.5 },
+      rotate: { start: 0, end: 1600 },
+      alpha: { start: 1, end: 0 },
+      tint: { min: 0x000000, max: 0xffffff },
+      gravityY: 1000,
+      on: false
+    })
+
+    this.cameras.main.fadeIn(500, 0, 0, 0)
+    this.randomStar()
+
+    // Menu logos
+    this.add.sprite(this.cameras.main.centerX, -600, 'phaser_logo')
+    this.add.sprite(this.cameras.main.centerX, -270, 'space_cowboy')
+
     // Start button
     this.button = this.add.sprite(495, -299, 'start_button').setInteractive()
     this.button.setScale(0.55, 0.55)
     this.button.on('pointerdown', async function () {
       this.button.input.enabled = false
       this.player.canMove = false
-      this.player.removeColliders()
-      this.time.addEvent({
-        delay: 1000,
-        callback: () => {
-          this.button.input.enabled = true
-        },
-        callbackScope: this
-      })
+      this.player.pauseColliders()
     }, this)
 
     this.button.on('pointerover', function () {
@@ -119,22 +160,6 @@ export class levelScene extends Phaser.Scene {
       this.button.setTexture('start_button')
       this.button.setPosition(495, -299)
     }, this)
-
-    // Jump particle emitter
-    this.jumpParticles = this.add.particles('jump_particle')
-    this.jumpEmitter = this.jumpParticles.createEmitter({
-      lifespan: 250,
-      speed: { min: 100, max: 125 },
-      count: { min: 3, max: 5 },
-      scale: { start: 1.5, end: 0 },
-      rotate: { start: 0, end: 20 },
-      alpha: { start: 1, end: 0 },
-      gravityY: 0,
-      on: false
-    })
-
-    this.cameras.main.fadeIn(500, 0, 0, 0)
-    this.randomStar()
   }
 
   update () {
@@ -155,46 +180,44 @@ export class levelScene extends Phaser.Scene {
     }
 
     this.cameraController.update()
-    this.player.update()
-    this.enemies.forEach(enemy => enemy.update())
   }
 
   buildPlatforms () {
-    this.platforms = this.physics.add.staticGroup()
+    this.platforms = this.add.group({ allowGravity: false })
+    this.platforms.add(new Platform(this, this.background.displayWidth / 2, this.physics.world.bounds.height - 500, 'platform0'))
+    this.platforms.add(new Platform(this, 420, 2600, 'platform2'))
+    this.platforms.add(new Platform(this, 700, 2700, 'platform1'))
 
-    this.platforms.create(this.background.displayWidth / 2, this.physics.world.bounds.height - 500, 'platform0')
+    this.platforms.add(new Platform(this, 150, 2450, 'platform3'))
+    this.platforms.add(new Platform(this, 400, 2250, 'platform1', 500, 2250, 1000))
+    this.platforms.add(new Platform(this, 800, 2250, 'platform1'))
+    this.platforms.add(new Platform(this, 1000, 2075, 'platform3'))
+    this.platforms.add(new Platform(this, 800, 1875, 'platform1'))
+    this.platforms.add(new Platform(this, 400, 1835, 'platform2'))
+    this.platforms.add(new Platform(this, 25, 1650, 'platform4'))
+    this.platforms.add(new Platform(this, 195, 1435, 'platform1'))
+    this.platforms.add(new Platform(this, 420, 1300, 'platform2'))
+    this.platforms.add(new Platform(this, 960, 1180, 'platform3'))
+    this.platforms.add(new Platform(this, 550, 1290, 'platform1', 750, 1290, 1000))
+    this.platforms.add(new Platform(this, 1000, 975, 'platform1'))
+    this.platforms.add(new Platform(this, 900, 830, 'platform1'))
+    this.platforms.add(new Platform(this, 475, 675, 'platform4'))
+    this.platforms.add(new Platform(this, 300, 550, 'platform2'))
+    this.platforms.add(new Platform(this, 100, 400, 'platform2'))
+    this.platforms.add(new Platform(this, 350, 250, 'platform2'))
+    this.platforms.add(new Platform(this, 500, 100, 'platform2'))
+    this.platforms.add(new Platform(this, 600, -50, 'platform2'))
+    this.platforms.add(new Platform(this, 900, -150, 'platform4'))
 
-    this.platforms.create(420, 2600, 'platform2')
-    this.platforms.create(700, 2700, 'platform1')
-    this.platforms.create(150, 2450, 'platform3')
-    this.platforms.create(400, 2250, 'platform1')
-    this.platforms.create(800, 2250, 'platform1')
-    this.platforms.create(1000, 2075, 'platform3')
-    this.platforms.create(800, 1875, 'platform1')
-    this.platforms.create(400, 1835, 'platform2')
-    this.platforms.create(25, 1650, 'platform4')
-    this.platforms.create(195, 1435, 'platform1')
-    this.platforms.create(450, 1315, 'platform2')
-    this.platforms.create(925, 1200, 'platform3')
-    this.platforms.create(400, 1115, 'platform2')
-    this.platforms.create(970, 995, 'platform1')
-    this.platforms.create(845, 830, 'platform1')
-    this.platforms.create(475, 680, 'platform4')
-    this.platforms.create(300, 550, 'platform2')
-    this.platforms.create(100, 400, 'platform2')
-    this.platforms.create(350, 250, 'platform2')
-    this.platforms.create(500, 100, 'platform2')
-    this.platforms.create(600, -50, 'platform2')
-    this.platforms.create(900, -150, 'platform4')
+    this.finishZone = this.physics.add.existing(new Phaser.GameObjects.Rectangle(this, 900, -215, 245, 35), true)
   }
 
   spawnEnemies () {
-    this.enemies = []
-
-    this.enemies.push(new Enemy(this, 800, 1700, 'red_enemy', 500, 1000, true))
-    this.enemies.push(new Enemy(this, 50, 2200, 'green_enemy', 150, 1600, false))
-    this.enemies.push(new Enemy(this, 330, 950, 'orange_enemy', 250, 1000, false))
-    // this.enemies.push(new Enemy(this, 260, 1700, 'blue_enemy', 420, 2400, 100))
+    this.enemies = this.add.group()
+    this.enemies.add(new Enemy(this, 800, 1700, 'red_enemy', 800, 2250, 1000, 0.6))
+    this.enemies.add(new Enemy(this, 50, 2150, 'green_enemy', 350, 2150, 1000, 0.6))
+    this.enemies.add(new Enemy(this, 330, 950, 'orange_enemy', 330, 1050, 750, 0.6))
+    // this.enemies.push(new Enemy(this, 260, 1700, 'blue_enemy', 420, 2400, 100, 0.6))
   }
 
   // Fires a star particle from a random side, in a random time and call the function again
@@ -205,7 +228,7 @@ export class levelScene extends Phaser.Scene {
       this.time.addEvent({
         delay: randomTime,
         callback: () => {
-          this.starEmitterR.emitParticleAt(1024, this.player.player.body.y - Math.random() * 600, 1)
+          this.starEmitterR.emitParticleAt(1024, this.player.body.y - Math.random() * 600, 1)
           this.randomStar()
         },
         callbackScope: this
@@ -214,11 +237,23 @@ export class levelScene extends Phaser.Scene {
       this.time.addEvent({
         delay: randomTime,
         callback: () => {
-          this.starEmitterL.emitParticleAt(0, this.player.player.body.y - Math.random() * 600, 1)
+          this.starEmitterL.emitParticleAt(0, this.player.body.y - Math.random() * 600, 1)
           this.randomStar()
         },
         callbackScope: this
       })
     }
+  }
+
+  startTimer () {
+    this.startTime = new Date().getTime()
+    this.UI.timerDisplay.setVisible(true)
+    this.levelTimer = this.time.addEvent({ delay: 150, loop: true, callback: this.updateTimer, callbackScope: this })
+  }
+
+  updateTimer () {
+    const currentTime = new Date().getTime()
+    const timeDifference = currentTime - this.startTime
+    this.UI.setTimer(timeDifference)
   }
 }

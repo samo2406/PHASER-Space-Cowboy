@@ -1,3 +1,10 @@
+@font-face {
+    font-family: 'retro';
+    src: url('Assets/Retro Gaming.ttf');
+    font-weight: bold;
+    font-style: normal;
+}
+
 html, body {
     height: 100%;
 }

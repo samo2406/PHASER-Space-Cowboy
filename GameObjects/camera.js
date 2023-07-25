@@ -4,7 +4,7 @@ export class CameraController {
   }
 
   update () {
-    const playerScrollCenterY = this.scene.player.player.body.y - this.scene.player.player.body.height - (this.scene.cameras.main.displayHeight / 2)
+    const playerScrollCenterY = this.scene.player.body.y - this.scene.player.body.height - (this.scene.cameras.main.displayHeight / 2)
     const distanceFromCamera = Math.abs(this.scene.cameras.main.scrollY - playerScrollCenterY)
     if (this.scene.cameras.main.scrollY < playerScrollCenterY) {
       this.scene.cameras.main.scrollY = Math.min(this.scene.cameras.main.scrollY + distanceFromCamera * 0.01, (this.scene.physics.world.bounds.height - 500) - this.scene.cameras.main.displayHeight)
