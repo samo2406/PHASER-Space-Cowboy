@@ -1,6 +1,5 @@
 import Player from '../GameObjects/player.js'
-import Enemy from '../GameObjects/enemy.js'
-import Platform from '../GameObjects/platform.js'
+import { spawnEnemies, spawnPlatforms } from '../Scenes/level-objects.js'
 import { CameraController } from '../GameObjects/camera.js'
 
 export class levelScene extends Phaser.Scene {
@@ -14,6 +13,7 @@ export class levelScene extends Phaser.Scene {
     this.load.image('start_button_mouseover', './Assets/start_button_mouseover.png')
     this.load.image('space_cowboy', './Assets/game_name.png')
     this.load.image('phaser_logo', 'https://labs.phaser.io/assets/sprites/phaser3-logo.png')
+    this.load.image('timer_sign_static', './Assets/timer_sign_static.png')
 
     this.load.image('background', './Assets/level1_bg.png')
     this.load.image('bg_planets', './Assets/planets.png')
@@ -90,10 +90,10 @@ export class levelScene extends Phaser.Scene {
     this.physics.world.setBounds(0, -500, this.background.width, this.background.height + 1000)
 
     // Platforms
-    this.buildPlatforms()
+    spawnPlatforms(this)
 
     // Enemies
-    this.spawnEnemies()
+    spawnEnemies(this)
 
     // Player
     this.player = new Player(this, 900, -250, 'player')
@@ -149,6 +149,24 @@ export class levelScene extends Phaser.Scene {
       this.button.input.enabled = false
       this.player.canMove = false
       this.player.pauseColliders()
+      this.time.addEvent({
+        delay: 1000,
+        callback: () => {
+          if (this.signCopy) {
+            this.signCopy.destroy()
+            this.timerCopy.destroy()
+          }
+          this.UI.sign.play('sign_falling')
+          this.UI.sign.setVisible(true)
+          this.UI.tweens.add({
+            targets: this.UI.timerDisplay,
+            duration: 800,
+            delay: 500,
+            alpha: { from: 0, to: 1 }
+          })
+        },
+        callbackScope: this
+      })
     }, this)
 
     this.button.on('pointerover', function () {
@@ -182,44 +200,6 @@ export class levelScene extends Phaser.Scene {
     this.cameraController.update()
   }
 
-  buildPlatforms () {
-    this.platforms = this.add.group({ allowGravity: false })
-    this.platforms.add(new Platform(this, this.background.displayWidth / 2, this.physics.world.bounds.height - 500, 'platform0'))
-    this.platforms.add(new Platform(this, 420, 2600, 'platform2'))
-    this.platforms.add(new Platform(this, 700, 2700, 'platform1'))
-
-    this.platforms.add(new Platform(this, 150, 2450, 'platform3'))
-    this.platforms.add(new Platform(this, 400, 2250, 'platform1', 500, 2250, 1000))
-    this.platforms.add(new Platform(this, 800, 2250, 'platform1'))
-    this.platforms.add(new Platform(this, 1000, 2075, 'platform3'))
-    this.platforms.add(new Platform(this, 800, 1875, 'platform1'))
-    this.platforms.add(new Platform(this, 400, 1835, 'platform2'))
-    this.platforms.add(new Platform(this, 25, 1650, 'platform4'))
-    this.platforms.add(new Platform(this, 195, 1435, 'platform1'))
-    this.platforms.add(new Platform(this, 420, 1300, 'platform2'))
-    this.platforms.add(new Platform(this, 960, 1180, 'platform3'))
-    this.platforms.add(new Platform(this, 550, 1290, 'platform1', 750, 1290, 1000))
-    this.platforms.add(new Platform(this, 1000, 975, 'platform1'))
-    this.platforms.add(new Platform(this, 900, 830, 'platform1'))
-    this.platforms.add(new Platform(this, 475, 675, 'platform4'))
-    this.platforms.add(new Platform(this, 300, 550, 'platform2'))
-    this.platforms.add(new Platform(this, 100, 400, 'platform2'))
-    this.platforms.add(new Platform(this, 350, 250, 'platform2'))
-    this.platforms.add(new Platform(this, 500, 100, 'platform2'))
-    this.platforms.add(new Platform(this, 600, -50, 'platform2'))
-    this.platforms.add(new Platform(this, 900, -150, 'platform4'))
-
-    this.finishZone = this.physics.add.existing(new Phaser.GameObjects.Rectangle(this, 900, -215, 245, 35), true)
-  }
-
-  spawnEnemies () {
-    this.enemies = this.add.group()
-    this.enemies.add(new Enemy(this, 800, 1700, 'red_enemy', 800, 2250, 1000, 0.6))
-    this.enemies.add(new Enemy(this, 50, 2150, 'green_enemy', 350, 2150, 1000, 0.6))
-    this.enemies.add(new Enemy(this, 330, 950, 'orange_enemy', 330, 1050, 750, 0.6))
-    // this.enemies.push(new Enemy(this, 260, 1700, 'blue_enemy', 420, 2400, 100, 0.6))
-  }
-
   // Fires a star particle from a random side, in a random time and call the function again
   randomStar () {
     const randomTime = Math.random() * 8000
@@ -247,7 +227,6 @@ export class levelScene extends Phaser.Scene {
 
   startTimer () {
     this.startTime = new Date().getTime()
-    this.UI.timerDisplay.setVisible(true)
     this.levelTimer = this.time.addEvent({ delay: 150, loop: true, callback: this.updateTimer, callbackScope: this })
   }
 
@@ -255,5 +234,22 @@ export class levelScene extends Phaser.Scene {
     const currentTime = new Date().getTime()
     const timeDifference = currentTime - this.startTime
     this.UI.setTimer(timeDifference)
+  }
+
+  finishedLevel () {
+    const endTime = new Date().getTime()
+    const finalTime = endTime - this.startTime
+    this.UI.setTimer(finalTime)
+    this.levelTimer.paused = true
+
+    this.button.input.enabled = true
+    this.fireworkEmitter.emitParticleAt(this.player.body.x + this.player.displayWidth / 2, this.player.body.y + this.player.displayHeight, 50)
+
+    // Creates a copy of UI sign
+    this.signCopy = this.add.sprite(920, -650, 'timer_sign_static')
+    this.timerCopy = this.add.text(860, -643, this.UI.timerDisplay.text, { fontFamily: 'retro', fontSize: '21px', fill: '#b3b3b3' })
+    this.UI.timerDisplay.setAlpha(0)
+    this.UI.setTimer(0)
+    this.UI.sign.setVisible(false)
   }
 }

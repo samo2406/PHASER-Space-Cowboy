@@ -26,7 +26,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.setCollideWorldBounds(true)
     this.scene.physics.add.collider(this, scene.platforms, this.hitPlatform, null, this)
     this.scene.physics.add.overlap(this, scene.enemies, this.hitEnemy, null, this)
-    this.scene.physics.add.overlap(this, scene.finishZone, this.finishLevel, null, this)
+    this.scene.physics.add.overlap(this, scene.finishZone, this.finishedLevel, null, this)
 
     // Animations
     this.scene.anims.create({
@@ -150,25 +150,20 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  finishLevel () {
+  finishedLevel () {
     if (this.body.touching.down && this.canMove) {
-      this.endTime = new Date().getTime()
-      const finalTime = this.endTime - this.scene.startTime
-      this.scene.UI.setTimer(finalTime)
-      this.scene.levelTimer.destroy()
+      this.scene.finishedLevel()
       if (this.scene.UI.soundOn) {
         this.scene.finishSound.play()
       }
       this.setVelocityX(0)
       this.canMove = false
       this.firstInput = false
-      this.scene.button.input.enabled = true
-      this.scene.fireworkEmitter.emitParticleAt(this.body.x + this.displayWidth / 2, this.body.y + this.displayHeight, 50)
     }
   }
 
   update () {
-    if (!this.firstInput && (this.holdingMovement || this.jumping)) {
+    if (!this.firstInput && this.canMove && (this.holdingMovement || this.jumping)) {
       this.scene.startTimer()
       this.firstInput = true
     }

@@ -9,7 +9,7 @@ const config = {
     default: 'arcade',
     arcade: {
       gravity: { y: 5000 },
-      debug: true
+      debug: false
     }
   },
   scene: [levelScene, UIScene]
