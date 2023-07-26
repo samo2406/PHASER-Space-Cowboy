@@ -34,6 +34,11 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   moveToTarget () {
+    if (this.defaultX < this.targetX) {
+      this.setFlipX(false)
+    } else {
+      this.setFlipX(true)
+    }
     this.x = this.defaultX
     this.y = this.defaultY
     this.scene.physics.moveTo(this, this.targetX, this.targetY, null, this.duration)
@@ -41,6 +46,11 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   moveTodefault () {
+    if (this.targetX < this.defaultX) {
+      this.setFlipX(false)
+    } else {
+      this.setFlipX(true)
+    }
     this.x = this.targetX
     this.y = this.targetY
     this.scene.physics.moveTo(this, this.defaultX, this.defaultY, null, this.duration)

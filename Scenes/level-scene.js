@@ -31,7 +31,7 @@ export class levelScene extends Phaser.Scene {
     this.load.spritesheet('player', './Assets/player.png', { frameWidth: 60, frameHeight: 84, spacing: 6 })
     this.load.spritesheet('red_enemy', './Assets/red_enemy.png', { frameWidth: 123, frameHeight: 98, spacing: 4 })
     this.load.spritesheet('green_enemy', './Assets/green_enemy.png', { frameWidth: 126, frameHeight: 81, spacing: 7 })
-    this.load.spritesheet('blue_enemy', './Assets/blue_enemy.png', { frameWidth: 129, frameHeight: 98, spacing: 1 })
+    this.load.spritesheet('blue_enemy', './Assets/blue_enemy.png', { frameWidth: 124, frameHeight: 98, spacing: 11 })
     this.load.spritesheet('orange_enemy', './Assets/orange_enemy.png', { frameWidth: 115, frameHeight: 81, spacing: 2 })
 
     this.load.audio('jump', './Assets/jump.wav')
